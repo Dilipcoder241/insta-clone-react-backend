@@ -6,9 +6,10 @@ var logger = require('morgan');
 const session = require('express-session');
 const cors = require('cors')
 const flash = require('connect-flash');
+const cloudinary = require('cloudinary').v2
+require('dotenv').config()
 
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
 
 var app = express();
 app.use(cors());
@@ -30,7 +31,14 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+
+
+          
+cloudinary.config({ 
+  cloud_name: process.env.CLOUD_NAME, 
+  api_key: process.env.API_KEY, 
+  api_secret: process.env.API_SECRET 
+});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -2,10 +2,10 @@
     "version" :2,
     "name": "insta-clone-backend",
     "builds":[
-        {"src" :"app.js" , "use":"@vercel/node"}
+        {"src" :"bin/www" , "use":"@vercel/node"}
     ] ,
     "routes":[
-        {"src" :"/(.*)" , "dest":"/app.js"}
+        {"src" :"/(.*)" , "dest":"/bin/www"}
     ]
     
 

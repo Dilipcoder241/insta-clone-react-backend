@@ -10,6 +10,11 @@ const upload = require('./multer.js');
 
 /* GET home page. */
 
+
+router.get("/" , (req,res)=>{
+  res.send("backend insta clone");
+})
+
 router.post("/register", async (req, res) => {
   const { username, name, email, password } = req.body;
   const user = new UserModel({

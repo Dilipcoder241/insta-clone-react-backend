@@ -133,9 +133,18 @@ router.get('/getimage', async (req, res) => {
 })
 
 router.get('/getallposts', async (req, res) => {
-  const result = await postModel.find().populate('user')
+  const result = await postModel.find().populate('user');
+
+  
 
   res.json({ result })
 })
 
+
+
+router.post("/search" , async(req,res)=>{
+  const regex = RegExp(`^${req.body.name}` , 'i');
+  const user = await UserModel.find({username:regex});
+  res.json({user});
+})
 module.exports = router;

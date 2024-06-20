@@ -2,8 +2,7 @@ const mongoose = require("mongoose");
 
 const postSchema = mongoose.Schema({
     caption:String,
-    image:String,
-    publicId:String,
+    image:Buffer,
     user:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'user'

@@ -32,12 +32,13 @@ router.post("/register", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
+  console.log(username, password)
   const user = await UserModel.findOne({ username: username });
   if (!user) {
     res.json({ success: false, msg: "invalid credentials" });
   }
   else {
-    const flag = await bcrypt.compare(password, user.password);
+    const flag = bcrypt.compare(password, user.password);
     if (flag) {
       const token = jwt.sign({ username: username }, "ash");
       res.json({ success: true, token });
@@ -61,29 +62,16 @@ router.get('/profile/:username', async (req, res) => {
 
 router.post('/edit',upload.single('file') ,async (req, res) => {
 
-  
-  try {
-    const previousimg = await cloudinary.api.resources({
-      type: 'upload',
-      prefix: 'userimage/',
-    });
-    await cloudinary.uploader.destroy(previousimg.resources[0].public_id);
-  } catch (error) {
-    console.log('nhi delte hui');
-  }
-
   try {
     const data = jwt.verify(req.headers.token, "ash");
     const uname = data.username;
     const user = await UserModel.findOneAndUpdate({ username: uname }, {
       username: req.body.username,
       name: req.body.name,
-      bio: req.body.bio
+      bio: req.body.bio,
+      photo:req.file.buffer
     })
     
-    const imgdata = await cloudinary.uploader.upload('https://i.pinimg.com/236x/43/08/3f/43083fd41edf5324b23804a83278605e.jpg', { folder: 'userimage', })
-    user.photo = imgdata.secure_url;
-    await user.save();
     res.json({ success: true })
   } catch (error) {
     res.json({ success: false, msg: "fail to edit" })
@@ -102,12 +90,10 @@ router.get('/getname', (req, res) => {
 router.post("/upload", upload.single('file'), async (req, res) => {
   try {
     const udata = jwt.verify(req.headers.token, "ash");
-    const data = await cloudinary.uploader.upload('https://i.pinimg.com/236x/14/73/b1/1473b14608da6a0747691ffacb113180.jpg', { folder: 'posts', })
     const user = await UserModel.findOne({username:udata.username})
     const post =await postModel.create({
       caption:req.body.caption,
-      image:data.secure_url,
-      publicId:data.public_id,
+      image:req.file.buffer,
       user:user._id
     })
     user.posts.push(post._id);
@@ -139,9 +125,6 @@ router.get('/getimage', async (req, res) => {
 
 router.get('/getallposts', async (req, res) => {
   const result = await postModel.find().populate('user');
-
-  
-
   res.json({ result })
 })
 

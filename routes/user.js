@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 require('dotenv').config()
 
-mongoose.connect(process.env.Mongo_Url);
+mongoose.connect("mongodb+srv://mihirsingh241:9898555808@cluster0.bwaslzo.mongodb.net/instaclone")
 
 const userSchema = mongoose.Schema({
   username:String,
@@ -9,7 +9,7 @@ const userSchema = mongoose.Schema({
   email:String,
   password:String,
   bio:String,
-  photo:String,
+  photo:Buffer,
   posts:[{
     type:mongoose.Schema.Types.ObjectId,
     ref:'post'

@@ -18,61 +18,69 @@ router.get("/" , (req,res)=>{
 router.post("/register", async (req, res) => {
   const { username, name, email, password } = req.body;
 
-  const preExistUser = UserModel.findOne({$or:[{email:email} , {username:username}]})
-  if(!preExistUser){
-    const user = new UserModel({
-      username: username,
-      name: name,
-      email: email,
-    })
-    const encryptpass = await bcrypt.hash(password, 10);
-    user.password = encryptpass;
-    UserModel.create(user);
-  
-    res.status(200).json({ "success": true , msg:"You Can Now Login"});
-  }
-  else{
-    res.status(400).json({msg:"User Already Exist With This Email Or Username"});
-  }
+ try {
+   const preExistUser = UserModel.findOne({$or:[{email:email} , {username:username}]})
+   if(!preExistUser){
+     const user = new UserModel({
+       username: username,
+       name: name,
+       email: email,
+     })
+     const encryptpass = await bcrypt.hash(password, 10);
+     user.password = encryptpass;
+     UserModel.create(user);
+   
+     res.status(200).json({ "success": true , msg:"You Can Now Login"});
+   }
+   else{
+     res.status(400).json({msg:"User Already Exist With This Email Or Username"});
+   }
+ } catch (error) {
+  res.status(404).json({msg: "Some Error occur While Registering Your Account" , error:error });
+ }
 })
 
 
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
-  console.log(username, password);
-  const user = await UserModel.findOne({ username: username });
-  if (!user) {
-    res.json({ success: false, msg: "invalid credentials" });
-  }
-  else {
-    const flag = bcrypt.compare(password, user.password);
-    if (flag) {
-      const token = jwt.sign({ username: username }, "ash");
-      res.json({ success: true, token  , msg:"login successfully"});
-    }
-    else {
-      res.json({ success: false, msg: "invalid credentials" });
-    }
+
+ try {
+   const user = await UserModel.findOne({ username: username });
+   if (!user) {
+     res.json({ success: false, msg: "invalid credentials" });
+   }
+   else {
+     const flag = bcrypt.compare(password, user.password);
+     if (flag) {
+       const token = jwt.sign({ username: username }, "ash");
+       res.json({ success: true, token  , msg:"login successfully"});
+     }
+     else {
+       res.json({ success: false, msg: "invalid credentials" });
+     }
+   }
+ } catch (error) {
+  res.status(404).json({msg: "some Error occur While Loging You" , error:error });
+  
+ }
+}) 
+
+
+
+router.get('/profile/:username',isLogin ,async (req, res) => {
+  try {
+    const user = await UserModel.findOne({ username: req.params.username }).populate('posts');
+    res.json(user);
+  } catch (error) {
+    res.status(404).json({msg: "some Error occur While Finding your Profile" , error:error });
   }
 })
 
 
-
-router.get('/profile/:username', async (req, res) => {
-  const user = await UserModel.findOne({ username: req.params.username });
-  if (!user) {
-    res.json('feed');
-  }
-  res.json(user);
-})
-
-
-router.post('/edit',upload.single('file') ,async (req, res) => {
+router.post('/edit', isLogin ,upload.single('file') ,async (req, res) => {
 
   try {
-    const data = jwt.verify(req.headers.token, "ash");
-    const uname = data.username;
-    const user = await UserModel.findOneAndUpdate({ username: uname }, {
+    const user = await UserModel.findOneAndUpdate({ username: req.user.username }, {
       username: req.body.username,
       name: req.body.name,
       bio: req.body.bio,
@@ -89,21 +97,20 @@ router.post('/edit',upload.single('file') ,async (req, res) => {
 })
 
 
-router.get('/getname', (req, res) => {
-  res.json(jwt.verify(req.headers.token, "ash"));
+router.get('/getname', isLogin ,async (req, res) => {
+  res.json(req.user); 
 })
 
 
-router.post("/upload", upload.single('file'), async (req, res) => {
+router.post("/upload", isLogin,upload.single('file'), async (req, res) => {
   try {
-    const udata = jwt.verify(req.headers.token, "ash");
-    const user = await UserModel.findOne({username:udata.username})
+    const user = await UserModel.findOne({username:req.user.username})
     const post =await postModel.create({
       caption:req.body.caption,
       image:req.file.buffer,
       user:user._id
     })
-    user.posts.push(post._id);
+    user.posts.push(post._id); 
     await user.save();
     res.json({ success: true , msg:"post uploded successfully"})
   } catch (error) {
@@ -112,34 +119,36 @@ router.post("/upload", upload.single('file'), async (req, res) => {
 
 })
 
-router.get('/getallimage', async (req, res) => {
-  const data = jwt.verify(req.headers.token, "ash")
-  const result = await UserModel.findOne({username:data.username}).populate('posts')
 
-  res.json({ result })
-})
-
-router.get('/getimage', async (req, res) => {
-  uname = jwt.verify(req.headers.token, "ash");
-  try {
-    const user = await UserModel.findOne({username:uname.username})
-    res.json({ user })
-  } catch (error) {
-    res.json({success:false , msg:error})
-  }
- 
-})
 
 router.get('/getallposts', async (req, res) => {
-  const result = await postModel.find().populate('user');
-  res.json({ result })
+  try {
+    const result = await postModel.find().populate('user');
+    res.json({ result })
+  } catch (error) {
+    res.status(404).json({msg: "some Error occur While Finding Posts" , error:error });
+  }
 })
 
 
 
 router.post("/search" , async(req,res)=>{
   const regex = RegExp(`^${req.body.name}` , 'i');
-  const user = await UserModel.find({username:regex});
+  const user = await UserModel.find({username:regex}); 
   res.json({user});
 })
+
+
+async function isLogin(req,res,next){
+  if(!req.headers.token) {
+    return res.json({msg:"please Login t"});
+  };
+  uname = jwt.verify(req.headers.token , "ash").username;
+  const user = await UserModel.findOne({username:uname});
+  if(!user){
+    return res.json({msg:"Please Login u"});
+  }
+  req.user = user;
+  next();
+}
 module.exports = router;

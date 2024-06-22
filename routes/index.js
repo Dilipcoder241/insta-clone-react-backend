@@ -19,7 +19,8 @@ router.post("/register", async (req, res) => {
   const { username, name, email, password } = req.body;
 
  try {
-   const preExistUser = UserModel.findOne({$or:[{email:email} , {username:username}]})
+   const preExistUser = await UserModel.findOne({$or:[{email:email} , {username:username}]})
+   console.log(preExistUser)
    if(!preExistUser){
      const user = new UserModel({
        username: username,
@@ -84,7 +85,8 @@ router.post('/edit', isLogin ,upload.single('file') ,async (req, res) => {
       username: req.body.username,
       name: req.body.name,
       bio: req.body.bio,
-      photo:req.file.buffer
+      photo:req.body.photo,
+      publicId:req.body.publicId
     })
     
     res.json({ success: true })
@@ -107,7 +109,8 @@ router.post("/upload", isLogin,upload.single('file'), async (req, res) => {
     const user = await UserModel.findOne({username:req.user.username})
     const post =await postModel.create({
       caption:req.body.caption,
-      image:req.file.buffer,
+      image:req.body.image,
+      publicId:req.body.publicId,
       user:user._id
     })
     user.posts.push(post._id); 

@@ -2,7 +2,6 @@ var express = require('express');
 var router = express.Router();
 var bcrypt = require('bcryptjs');
 var jwt = require('jsonwebtoken');
-const cloudinary = require('cloudinary').v2;
 
 const UserModel = require("./user.js");
 const postModel = require("./post.js");
@@ -11,28 +10,36 @@ const upload = require('./multer.js');
 /* GET home page. */
 
 
+
 router.get("/" , (req,res)=>{
   res.send("backend insta clone");
 })
 
 router.post("/register", async (req, res) => {
   const { username, name, email, password } = req.body;
-  const user = new UserModel({
-    username: username,
-    name: name,
-    email: email,
-  })
-  const encryptpass = await bcrypt.hash(password, 10);
-  user.password = encryptpass;
-  UserModel.create(user);
 
-  res.json({ "success": true });
+  const preExistUser = UserModel.findOne({$or:[{email:email} , {username:username}]})
+  if(!preExistUser){
+    const user = new UserModel({
+      username: username,
+      name: name,
+      email: email,
+    })
+    const encryptpass = await bcrypt.hash(password, 10);
+    user.password = encryptpass;
+    UserModel.create(user);
+  
+    res.status(200).json({ "success": true , msg:"You Can Now Login"});
+  }
+  else{
+    res.status(400).json({msg:"User Already Exist With This Email Or Username"});
+  }
 })
 
 
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
-  console.log(username, password)
+  console.log(username, password);
   const user = await UserModel.findOne({ username: username });
   if (!user) {
     res.json({ success: false, msg: "invalid credentials" });
@@ -41,7 +48,7 @@ router.post("/login", async (req, res) => {
     const flag = bcrypt.compare(password, user.password);
     if (flag) {
       const token = jwt.sign({ username: username }, "ash");
-      res.json({ success: true, token });
+      res.json({ success: true, token  , msg:"login successfully"});
     }
     else {
       res.json({ success: false, msg: "invalid credentials" });

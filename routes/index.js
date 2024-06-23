@@ -142,6 +142,30 @@ router.post("/search" , async(req,res)=>{
 })
 
 
+router.post("/like/:id", isLogin ,async (req,res)=>{
+  try {
+    const user =await UserModel.findOne({username:req.user.username});
+    const post =await postModel.findOne({_id:req.params.id});
+
+    
+    if(user.likedPosts.indexOf(req.params.id) == -1){
+      post.likes.push(user._id);
+      user.likedPosts.push(post._id);
+    }
+    else{
+      post.likes.splice(post.likes.indexOf(req.params.id),1);
+      user.likedPosts.splice(user.likedPosts.indexOf(req.params.id),1);
+    }
+    await post.save();
+    await user.save();
+    
+    res.json({post}) 
+  } catch (error) {
+    res.status(400).json({msg:"some error occur"})
+  }
+})
+
+
 async function isLogin(req,res,next){
   if(!req.headers.token) {
     return res.json({msg:"please Login t"});

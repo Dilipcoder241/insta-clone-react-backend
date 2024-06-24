@@ -70,7 +70,7 @@ router.post("/login", async (req, res) => {
 
 router.get('/profile/:username',isLogin ,async (req, res) => {
   try {
-    const user = await UserModel.findOne({ username: req.params.username }).populate('posts');
+    const user = await UserModel.findOne({ username: req.params.username }).populate({path:"posts" , populate:{path:"comment.user"}});
     res.json(user);
   } catch (error) {
     res.status(404).json({msg: "some Error occur While Finding your Profile" , error:error });
@@ -135,10 +135,10 @@ router.get('/getallposts', async (req, res) => {
 
 
 
-router.post("/search" , async(req,res)=>{
+router.post("/search",isLogin , async(req,res)=>{
   const regex = RegExp(`^${req.body.name}` , 'i');
-  const user = await UserModel.find({username:regex}); 
-  res.json({user});
+  const user = await UserModel.find({username:regex});
+  res.json({user , loginUser:req.user});
 })
 
 
@@ -183,6 +183,35 @@ router.post("/comment/:id" , isLogin , async (req,res)=>{
 })
 
 
+router.post("/delete/:id" , isLogin , async (req,res)=>{
+  try {
+    if(req.user.posts.indexOf(req.params.id)!= -1){
+      const user = await UserModel.findOne({username:req.user.username})
+      await postModel.findOneAndDelete({_id:req.params.id});
+      user.posts.splice(user.posts.indexOf(req.params.id),1);
+      await user.save();
+      res.json({success:true , msg:"Post Deleted Successfully"});
+    }
+    else{
+      res.json({success:"false" , msg:"you are not allow to delete this post"})
+    }
+    
+  } catch (error) {
+    res.status(400).json({msg:"some error occur"});
+  }
+})
+
+
+router.get("/user/:id", isLogin , async (req, res)=>{
+  try {
+    const user = await UserModel.findOne({ _id: req.params.id }).populate({path:"posts" , populate:{path:"comment.user"}});
+    res.json({user});
+  } catch (error) {
+    res.status(400).json({msg:"some error occur"});
+  }
+})
+
+
 async function isLogin(req,res,next){
   if(!req.headers.token) {
     return res.json({msg:"please Login t"});
@@ -194,5 +223,5 @@ async function isLogin(req,res,next){
   }
   req.user = user;
   next();
-}
+} 
 module.exports = router;

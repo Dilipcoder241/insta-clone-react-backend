@@ -126,7 +126,7 @@ router.post("/upload", isLogin,upload.single('file'), async (req, res) => {
 
 router.get('/getallposts', async (req, res) => {
   try {
-    const result = await postModel.find().populate('user');
+    const result = await postModel.find().populate('user' , "username photo").populate("comment.user" , "username photo");
     res.json({ result })
   } catch (error) {
     res.status(404).json({msg: "some Error occur While Finding Posts" , error:error });
@@ -159,9 +159,26 @@ router.post("/like/:id", isLogin ,async (req,res)=>{
     await post.save();
     await user.save();
     
-    res.json({post}) 
+    res.json({post});
   } catch (error) {
-    res.status(400).json({msg:"some error occur"})
+    res.status(400).json({msg:"some error occur"});
+  }
+})
+
+
+router.post("/comment/:id" , isLogin , async (req,res)=>{
+  try {
+    const user =await UserModel.findOne({username:req.user.username});
+    const updatedPost = await postModel.findOneAndUpdate(
+      { _id: req.params.id },
+      { $push: { comment: { text: req.body.text, user: user._id } } },
+      { new: true }
+    ).populate('comment.user' , "username photo");
+
+    res.json({updatedPost , user});
+    
+  } catch (error) {
+    res.status(400).json({msg:"some error occur"});
   }
 })
 

@@ -13,6 +13,13 @@ const postSchema = mongoose.Schema({
         ref:"user",
         default:[]
     }],
+    comment:[{
+        text:String,
+        user:{
+            type:mongoose.Schema.Types.ObjectId,
+            ref:"user"
+        }
+    }]
     
     
 } , {timestamps:true})

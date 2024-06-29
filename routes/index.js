@@ -19,8 +19,7 @@ router.post("/register", async (req, res) => {
   const { username, name, email, password } = req.body;
 
  try {
-   const preExistUser = await UserModel.findOne({$or:[{email:email} , {username:username}]})
-   console.log(preExistUser)
+   const preExistUser = await UserModel.findOne({$or:[{email:email} , {username:username}]});
    if(!preExistUser){
      const user = new UserModel({
        username: username,
@@ -51,7 +50,8 @@ router.post("/login", async (req, res) => {
      res.json({ success: false, msg: "invalid credentials" });
    }
    else {
-     const flag = bcrypt.compare(password, user.password);
+     const flag = await bcrypt.compare(password, user.password);
+     console.log(flag);
      if (flag) {
        const token = jwt.sign({ username: username }, "ash");
        res.json({ success: true, token  , msg:"login successfully"});
@@ -211,6 +211,28 @@ router.get("/user/:id", isLogin , async (req, res)=>{
   }
 })
 
+
+router.post("/follow/:id" , isLogin , async (req,res)=>{
+  try {
+    let user = await UserModel.findOne({_id:req.params.id}).populate({path:"posts" , populate:{path:"comment.user"}});
+    let loginUser = await UserModel.findOne({username:req.user.username})
+    if(user.followers.indexOf(loginUser._id)== -1){
+      user.followers.push(loginUser._id);
+      loginUser.following.push(user._id);
+
+      res.status(200).json({success:true,msg:"you are now following the user" });
+    }
+    else{
+      user.followers.splice(user.followers.indexOf(loginUser._id),1);
+      loginUser.following.splice(loginUser.following.indexOf(user._id));
+      res.status(200).json({success:true,msg:"you have unfollow the user"});
+    }
+    await user.save();
+    await loginUser.save();
+  } catch (error) {
+    res.status(400).json({msg:"some error occur"});
+  }
+})
 
 async function isLogin(req,res,next){
   if(!req.headers.token) {

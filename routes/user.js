@@ -20,6 +20,17 @@ const userSchema = new mongoose.Schema({
     ref:"post",
     default:[]
   }]
+  ,
+  followers:[{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:"user",
+    default:[]
+  }],
+  following:[{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:"user",
+    default:[]
+  }]
 }, {timestamps:true});
 
 

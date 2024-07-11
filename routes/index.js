@@ -193,7 +193,7 @@ router.post("/delete/:id" , isLogin , async (req,res)=>{
       res.json({success:true , msg:"Post Deleted Successfully"});
     }
     else{
-      res.json({success:"false" , msg:"you are not allow to delete this post"})
+      res.json({success:false , msg:"you are not allow to delete this post"})
     }
     
   } catch (error) {

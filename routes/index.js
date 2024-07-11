@@ -239,7 +239,7 @@ async function isLogin(req,res,next){
     return res.json({msg:"please Login t"});
   };
   uname = jwt.verify(req.headers.token , "ash").username;
-  const user = await UserModel.findOne({username:uname});
+  const user = await UserModel.findOne({username:uname}).populate("following");
   if(!user){
     return res.json({msg:"Please Login u"});
   }

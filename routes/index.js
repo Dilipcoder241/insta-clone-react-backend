@@ -28,7 +28,7 @@ router.post("/register", async (req, res) => {
      })
      const encryptpass = await bcrypt.hash(password, 10);
      user.password = encryptpass;
-     UserModel.create(user);
+     await UserModel.create(user);
    
      res.status(200).json({ "success": true , msg:"You Can Now Login"});
    }

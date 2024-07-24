@@ -7,13 +7,7 @@ const UserModel = require("./user.js");
 const postModel = require("./post.js");
 const upload = require('./multer.js');
 
-/* GET home page. */
 
-
-
-router.get("/" , (req,res)=>{
-  res.send("backend insta clone");
-})
 
 router.post("/register", async (req, res) => {
   const { username, name, email, password } = req.body;
@@ -124,7 +118,7 @@ router.post("/upload", isLogin,upload.single('file'), async (req, res) => {
 
 
 
-router.get('/getallposts', async (req, res) => {
+router.get('/getallposts', isLogin,async (req, res) => {
   try {
     const result = await postModel.find().populate('user' , "username photo").populate("comment.user" , "username photo");
     res.json({ result })
@@ -143,6 +137,7 @@ router.post("/search",isLogin , async(req,res)=>{
 
 
 router.post("/like/:id", isLogin ,async (req,res)=>{
+  
   try {
     const user =await UserModel.findOne({username:req.user.username});
     const post =await postModel.findOne({_id:req.params.id});

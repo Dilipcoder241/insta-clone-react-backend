@@ -8,6 +8,10 @@ const postModel = require("./post.js");
 const upload = require('./multer.js');
 
 
+router.get("/start", (req,res)=>{
+  res.json(true);
+})
+
 
 router.post("/register", async (req, res) => {
   const { username, name, email, password } = req.body;
@@ -45,7 +49,6 @@ router.post("/login", async (req, res) => {
    }
    else {
      const flag = await bcrypt.compare(password, user.password);
-     console.log(flag);
      if (flag) {
        const token = jwt.sign({ username: username }, "ash");
        res.json({ success: true, token  , msg:"login successfully"});
@@ -148,8 +151,10 @@ router.post("/like/:id", isLogin ,async (req,res)=>{
       user.likedPosts.push(post._id);
     }
     else{
-      post.likes.splice(post.likes.indexOf(req.params.id),1);
-      user.likedPosts.splice(user.likedPosts.indexOf(req.params.id),1);
+      if(post.likes.indexOf(user._id) != -1 || user.likedPosts.indexOf(req.params.id)!=-1){
+        post.likes.splice(post.likes.indexOf(user._id),1);
+        user.likedPosts.splice(user.likedPosts.indexOf(req.params.id),1);
+      };
     }
     await post.save();
     await user.save();
